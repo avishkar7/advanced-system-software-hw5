@@ -75,10 +75,35 @@ ls(char *path)
 int
 main(int argc, char *argv[])
 {
+  int start = uptime();
+  int context_start = get_context_switches();
+  int running_proc_start  = get_total_proc_running();
+	int sleeping_proc_start = get_total_proc_sleeping();
+	int runnable_proc_start = get_total_proc_runnable();
+	int unused_proc_start   = get_total_proc_unused();
+	int used_proc_start     = get_total_proc_used();
+	int zombie_proc_start   = get_total_proc_zombie();
   int i;
 
   if(argc < 2){
     ls(".");
+    int end = uptime();
+    int elapsed_time = (end - start);
+    int context_end = get_context_switches();
+    int running_proc_end  = get_total_proc_running();
+    int sleeping_proc_end = get_total_proc_sleeping();
+    int runnable_proc_end = get_total_proc_runnable();
+    int unused_proc_end   = get_total_proc_unused();
+    int used_proc_end     = get_total_proc_used();
+    int zombie_proc_end   = get_total_proc_zombie();
+    printf("Running proc diff: %d\n", running_proc_end - running_proc_start);
+    printf("Sleeping proc diff: %d\n", sleeping_proc_end - sleeping_proc_start);
+    printf("Runnable proc diff: %d\n", runnable_proc_end - runnable_proc_start);
+    printf("Unused proc diff: %d\n", unused_proc_end - unused_proc_start);
+    printf("Used proc diff: %d\n", used_proc_end - used_proc_start);
+    printf("Zombie proc diff: %d\n", zombie_proc_end - zombie_proc_start);
+    printf("\nExecution Time: %d ticks\n", elapsed_time);
+    printf("Total Context Switches: %d \n", context_end - context_start);
     exit(0);
   }
   for(i=1; i<argc; i++)

@@ -22,6 +22,15 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int get_context_switches(void);
+int get_tick_rate(void);
+int get_total_ticks(void);
+int get_total_proc_running(void);
+int get_total_proc_sleeping(void);
+int get_total_proc_runnable(void);
+int get_total_proc_unused(void);
+int get_total_proc_used(void);
+int get_total_proc_zombie(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -20,3 +20,13 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_get_context_switches     22
+#define SYS_get_tick_rate            23
+#define SYS_get_total_ticks          24
+#define SYS_get_total_proc_running   25
+#define SYS_get_total_proc_sleeping  26
+#define SYS_get_total_proc_runnable  27
+#define SYS_get_total_proc_unused    28
+#define SYS_get_total_proc_used      29
+#define SYS_get_total_proc_zombie    30
+

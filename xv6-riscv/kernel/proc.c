@@ -20,6 +20,15 @@ static void freeproc(struct proc *p);
 
 extern char trampoline[]; // trampoline.S
 
+extern uint64 dynamic_tick_rate;
+uint64 total_context_switches = 0;
+uint64 proc_running = 0;
+uint64 proc_sleeping = 0;
+uint64 proc_runnable = 0;
+uint64 proc_unused = 0;
+uint64 proc_used = 0;
+uint64 proc_zombie = 0;
+
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
 // memory model when using p->parent.
@@ -452,19 +461,123 @@ scheduler(void)
     // The most recent process to run may have had interrupts
     // turned off; enable them to avoid a deadlock if all
     // processes are waiting.
+    int proc_sleeping_current = 0;
+    int proc_runnable_current = 0;
+    int proc_running_current = 0;
     intr_on();
+    // struct proc {
+    //   struct spinlock lock;
+    //   // p->lock must be held when using these:
+    //   enum procstate state;        // Process state
+    //   void *chan;                  // If non-zero, sleeping on chan
+    //   int killed;                  // If non-zero, have been killed
+    //   int xstate;                  // Exit status to be returned to parent's wait
+    //   int pid;                     // Process ID
 
+    //   // wait_lock must be held when using this:
+    //   struct proc *parent;         // Parent process
+
+    //   // these are private to the process, so p->lock need not be held.
+    //   uint64 kstack;               // Virtual address of kernel stack
+    //   uint64 sz;                   // Size of process memory (bytes)
+    //   pagetable_t pagetable;       // User page table
+    //   struct trapframe *trapframe; // data page for trampoline.S
+    //   struct context context;      // swtch() here to run process
+    //   struct file *ofile[NOFILE];  // Open files
+    //   struct inode *cwd;           // Current directory
+    //   char name[16];               // Process name (debugging)
+    // };
+    //printf("[sched] cpu=%d pid=%d state=%d sz=%lu name=%s\n", cpuid(), p->pid, p->state, p->sz, p->name);
     int found = 0;
+    //insert a runtime error here if the process is in a non-runnable state or if the lock is not held, for debugging purposes.
+
     for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
+      acquire(&p->lock);      
+      switch(p->state) {
+        case UNUSED:
+		  proc_unused++;
+          break;
+        case USED:
+		  proc_used++;
+          break;
+        case SLEEPING:
+		  proc_sleeping++;
+      proc_sleeping_current++;
+          break;
+        case RUNNABLE:
+		  proc_runnable++;
+      proc_runnable_current++;
+          break;
+        case RUNNING:
+		  proc_running++;
+      proc_running_current++;
+          break;
+        case ZOMBIE:
+		  proc_zombie++;
+          break;
+      }
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
+        // For debugging in terminal: check that the process is in a runnable state and that the lock is held.
+
+        //Performed worse.
+        // int total_run_proc = proc_running_current + proc_runnable_current;
+        // int total_proc_activity = total_run_proc + proc_sleeping_current;
+        // if (total_proc_activity == 0) {
+        //     dynamic_tick_rate = 2000;
+        // }
+        // else {
+        //     int sleep_pct = (100 * proc_sleeping_current) / total_proc_activity;
+        //     //int run_pct   = (100 * total_run_proc) / total_proc_activity;
+        //     if (total_run_proc < 10 && sleep_pct < 50) {
+        //         dynamic_tick_rate = 500000;
+        //     } else if (total_run_proc > 10 && sleep_pct > 70) {
+        //         dynamic_tick_rate = 100000;
+        //     } else {
+        //         dynamic_tick_rate = 50000;
+        //     }
+        // }
+        uint64 run_started_at = r_time();
+        
+        //   if(proc_sleeping > 5)
+        //     dynamic_tick_rate = 100000;   // 0.1 second
+        // }
+        // else if (total_run_proc < 16)
+        //     dynamic_tick_rate = 2000;   // 2 ms
+        // else
+        //     dynamic_tick_rate = 1000;   // 1 ms
         p->state = RUNNING;
         c->proc = p;
         swtch(&c->context, &p->context);
+        total_context_switches++;
+        // uint64 run_time = r_time() - run_started_at;
+        // if(run_time > dynamic_tick_rate && proc_runnable_current > 1 && dynamic_tick_rate > 100000) {
+        //   uint64 next_tick_rate = dynamic_tick_rate / 2;
+        //   dynamic_tick_rate = next_tick_rate < 100000 ? 100000 : next_tick_rate;
+        // }
 
+        uint64 run_time = r_time() - run_started_at;
+        if (run_time > dynamic_tick_rate &&
+            proc_runnable_current > 10 &&
+            dynamic_tick_rate > 250000) {
+          uint64 next_tick_rate = (dynamic_tick_rate * 3) / 4;
+          dynamic_tick_rate = next_tick_rate < 250000 ? 250000 : next_tick_rate;
+        } //only decrease the tick rate if the runnables are too many. We want to be more responsive when there are many runnable processes, 
+        //but we don't want to decrease the tick rate if there are only a few runnable processes, even if they are running for a long time.
+        //below logic made to slowly increase the interval.
+        else if (proc_runnable_current <= 2) {
+          if (dynamic_tick_rate < 1000000 && proc_runnable_current == 2) {
+            uint64 next_tick_rate = (dynamic_tick_rate * 5) / 4;
+            dynamic_tick_rate = next_tick_rate > 1000000 ? 1000000 : next_tick_rate;
+          }else{
+            dynamic_tick_rate = 1500000;
+          }
+        }
+
+
+        //printf("\nprocess running: %d  |  tick rate: %ld\n", proc_running, dynamic_tick_rate);
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
@@ -492,6 +605,11 @@ sched(void)
 {
   int intena;
   struct proc *p = myproc();
+
+  //TO DO: check that the current process is running and that the lock is held.
+  // Dynamic tick interval implementation may cause the current process to be in a 
+  //non-running state when sched() is called, so we will not panic in that case. 
+  //Instead, we will just return from sched() without switching to the scheduler.
 
   if(!holding(&p->lock))
     panic("sched p->lock");

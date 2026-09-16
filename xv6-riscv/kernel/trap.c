@@ -8,6 +8,8 @@
 
 struct spinlock tickslock;
 uint ticks;
+uint64 dynamic_tick_rate = 1000000;
+uint64 total_ticks = 0;
 
 extern char trampoline[], uservec[], userret[];
 
@@ -166,6 +168,7 @@ clockintr()
   if(cpuid() == 0){
     acquire(&tickslock);
     ticks++;
+    total_ticks += dynamic_tick_rate;
     wakeup(&ticks);
     release(&tickslock);
   }
@@ -173,7 +176,8 @@ clockintr()
   // ask for the next timer interrupt. this also clears
   // the interrupt request. 1000000 is about a tenth
   // of a second.
-  w_stimecmp(r_time() + 1000000);
+   //w_stimecmp(r_time() + 1000000);
+  w_stimecmp(r_time() + dynamic_tick_rate);
 }
 
 // check if it's an external interrupt or software interrupt,

@@ -101,6 +101,16 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_get_context_switches(void);
+extern uint64 sys_get_tick_rate(void);
+extern uint64 sys_get_total_ticks(void);
+extern uint64 sys_get_total_proc_zombie(void);
+extern uint64 sys_get_total_proc_running(void);
+extern uint64 sys_get_total_proc_sleeping(void);
+extern uint64 sys_get_total_proc_runnable(void);
+extern uint64 sys_get_total_proc_unused(void);
+extern uint64 sys_get_total_proc_used(void);
+
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +136,15 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_get_context_switches]   sys_get_context_switches,
+[SYS_get_tick_rate]   sys_get_tick_rate,
+[SYS_get_total_ticks]   sys_get_total_ticks,
+[SYS_get_total_proc_running]   sys_get_total_proc_running,
+[SYS_get_total_proc_sleeping]  sys_get_total_proc_sleeping,
+[SYS_get_total_proc_runnable]  sys_get_total_proc_runnable,
+[SYS_get_total_proc_unused]    sys_get_total_proc_unused,
+[SYS_get_total_proc_used]      sys_get_total_proc_used,
+[SYS_get_total_proc_zombie]    sys_get_total_proc_zombie,
 };
 
 void

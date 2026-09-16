@@ -91,3 +91,67 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_get_context_switches(void)
+{
+  extern uint64 total_context_switches;
+  return total_context_switches;
+}
+
+uint64
+sys_get_tick_rate(void)
+{
+  extern uint64 dynamic_tick_rate;
+  return dynamic_tick_rate;
+}
+
+uint64
+sys_get_total_ticks(void)
+{
+  extern uint64 total_ticks;
+  return total_ticks;
+}
+
+uint64
+sys_get_total_proc_running(void)
+{
+  extern uint64 proc_running;
+  return proc_running;
+}
+
+uint64
+sys_get_total_proc_sleeping(void)
+{
+  extern uint64 proc_sleeping;
+  return proc_sleeping;
+}
+
+uint64
+sys_get_total_proc_runnable(void)
+{
+  extern uint64 proc_runnable;
+  return proc_runnable;
+}
+
+uint64
+sys_get_total_proc_unused(void)
+{
+  extern uint64 proc_unused;
+  return proc_unused;
+}
+
+uint64
+sys_get_total_proc_used(void)
+{
+  extern uint64 proc_used;
+  return proc_used;
+}
+
+uint64
+sys_get_total_proc_zombie(void)
+{
+  extern uint64 proc_zombie;
+  return proc_zombie;
+}
+
