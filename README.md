@@ -2,10 +2,6 @@
 
 > Part of the [Advanced System Software](https://github.com/avishkar7/advanced-system-software) portfolio.
 
-> **Status — work in progress.** This repository currently holds the xv6 base
-> tree. I will add the modified kernel implementing the dynamic tick policy, the
-> `runtime` test program, and the project report.
-
 ## Project
 
 Modify xv6's tick-based kernel so the tick period is **dynamic** — adjusted by
@@ -16,9 +12,17 @@ difference against the stock fixed-interval kernel.
 
 ## Approach
 
-The kernel adjusts the tick interval adaptively in response to the operation of
-processes in the system. Performance is evaluated with the provided `runtime`
-user program against the original fixed-interval kernel.
+The scheduler replaces the fixed `1000000`-cycle timer interval with a
+`dynamic_tick_rate` that it adjusts each pass from the runnable-process count
+and per-slice run time: the interval shrinks under many runnable processes for
+responsiveness and grows back when the system is idle. The kernel also tracks
+`total_ticks`, `total_context_switches`, and per-state process counts.
+
+These metrics are exposed to userspace through new system calls
+(`get_context_switches`, `get_tick_rate`, `get_total_ticks`, and
+`get_total_proc_*`). Performance is evaluated against the stock fixed-interval
+kernel using instrumented `forktest`, `usertests`, and `ls`, driven by
+`xv6-riscv/test-xv6.py`.
 
 - **Workloads:** `forktest`, `usertests`, and `ls`
 - **Method:** averaged over 10 runs each
@@ -32,7 +36,10 @@ of trade-offs and limitations.
 
 | Path | Contents |
 |------|----------|
-| `xv6-riscv/` | The xv6 kernel with the dynamic tick-interval implementation |
+| `xv6-riscv/kernel/` | Kernel with the dynamic tick policy and metric syscalls |
+| `xv6-riscv/user/` | User programs, incl. instrumented `forktest`, `usertests`, `ls` |
+| `xv6-riscv/test-xv6.py` | QEMU benchmark driver |
+| `report/report.pdf` | Project write-up (policy, fixed-vs-dynamic study) |
 | `docs/handout.pdf` | Original final-project handout |
 
 ## Build & run
