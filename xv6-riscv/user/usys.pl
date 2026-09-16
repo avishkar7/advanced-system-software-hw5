@@ -37,6 +37,7 @@ entry("sbrk");
 entry("sleep");
 entry("uptime");
 entry("get_context_switches");
+entry("get_tick_rate");
 entry("get_total_ticks");
 entry("get_total_proc_running");
 entry("get_total_proc_sleeping");
